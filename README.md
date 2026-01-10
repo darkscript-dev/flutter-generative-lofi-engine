@@ -1,106 +1,79 @@
-# 🎧 Infinite Lofi Engine (Flutter)
+# 🎵 Infinite Lofi Engine (Flutter)
 
-![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
-![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Prototype-green?style=for-the-badge)
+![Flutter](https://img.shields.io/badge/Flutter-3.0%2B-02569B?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.0%2B-0175C2?logo=dart)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-> **A high-performance generative audio engine that creates non-stop, evolving Lofi music mixed with isochronic tones for cognitive optimization.**
+A generative, multi-layered audio engine built with Flutter. Unlike standard music players that stream large linear files, this engine constructs non-stop, unique Lofi tracks in real-time by mixing synchronized loops and neuro-acoustic layers.
 
----
+> **Status:** Prototype / V1.0  
+> **Target App:** Lyra (Focus & Sleep Assistant)
 
-## 📱 Project Overview
+## 🧠 The Concept
 
-Unlike standard music players that stream large, linear MP3 files, the **Infinite Lofi Engine** is a real-time audio mixer. It constructs music on the fly by synchronizing separate audio "stems" (Drums, Melodies, and Atmosphere).
+The goal was to solve the issue of repetitive loop fatigue in productivity apps. This engine utilizes a **"Stem Mixing" architecture**:
 
-This architecture allows for:
-1.  **Infinite Playback:** By randomly crossfading melody loops over a constant drum anchor, the music never repeats effectively.
-2.  **Zero-Latency Looping:** Uses OGG Vorbis assets for seamless, gapless playback on Android/iOS.
-3.  **Brainwave Entrainment:** A dedicated, independent audio layer injects Isochronic Tones to help the user Focus, Relax, or Sleep.
+1.  **The Anchor:** A Drum loop that plays continuously to maintain rhythm.
+2.  **The Melody:** Two independent audio players that crossfade between different chord progressions every 15-60 seconds, creating a song that never repeats the exact same pattern.
+3.  **The Neuro Layer:** An invisible, user-adjustable layer of Isochronic Tones (Gamma/Alpha/Delta waves) for scientific brainwave entrainment.
 
----
+## 📱 Features
 
-## 🧠 The "Neuro" Logic (Brain Optimization)
+*   **Gapless Playback:** Seamless looping of OGG assets using `just_audio`.
+*   **Generative Algorithm:** Random selection of melody stems with automated linear crossfading.
+*   **Multi-Track Synchronization:** Ensures all 4 audio layers start with <50ms drift.
+*   **Neuro-Acoustic Mixer:** Independent volume control for brainwave frequencies.
+*   **Resource Efficient:** Uses small loop assets (<500kb) instead of streaming large songs (10MB+).
 
-This engine isn't just for music; it's a productivity tool. It uses a dedicated `NeuroPlayer` to overlay subtle isochronic pulses.
+## 🛠 Technical Architecture
 
-| Mode | Frequency | Target State |
-| :--- | :--- | :--- |
-| **Focus** | 40Hz (Gamma) | Peak concentration, problem solving, coding. |
-| **Relax** | 10Hz (Alpha) | Flow state, reading, light work. |
-| **Sleep** | 2Hz (Delta) | Deep restorative sleep induction. |
+The core logic resides in `LofiEngine`, a singleton controller that manages the lifecycle of four concurrent `AudioPlayer` instances.
 
-*The engine allows independent volume mixing of this layer, giving the user full control over the intensity of the entrainment.*
-
----
-
-## ⚙️ Technical Architecture
-
-The core logic resides in `LofiEngine`, a singleton controller that manages resource allocation and synchronization.
-
-### The 4-Player System
-To achieve gapless crossfading without stopping the beat, the engine orchestrates 4 simultaneous instances of `just_audio`:
-
-1.  **`_drumPlayer` (The Anchor):** Plays the rhythmic foundation. Loops continuously.
-2.  **`_neuroPlayer` (The Science):** Plays the selected frequency tone.
-3.  **`_melodyPlayerA`:** The currently active melody.
-4.  **`_melodyPlayerB`:** The buffer player. It pre-loads the *next* random loop and fades in while Player A fades out.
-
-### The Algorithm
 ```dart
 // Simplified Logic Flow
-Timer.periodic(15_seconds, () {
-  1. Select random loop from Asset Pool (excluding current).
-  2. Pre-load into Inactive Player (e.g., Player B).
-  3. Start Player B (Synced with Drums).
-  4. Linear Volume Crossfade (A -> 0.0, B -> 1.0).
-  5. Swap Active Player flags.
-});
-📂 Project Structure
-code
-Text
-download
-content_copy
-expand_less
+Future<void> play() async {
+  // 1. Synchronization: Start all stems at the exact same millisecond
+  await Future.wait([
+    _drumPlayer.play(),
+    _neuroPlayer.play(),
+    _melodyPlayerA.play(),
+    _melodyPlayerB.play(), // Starts silent
+  ]);
+
+  // 2. Automation: Start the crossfade timer
+  _startCrossfadeCycle();
+}
+```
+
+Directory Structure
+```
 lib/
 ├── engine/
-│   └── lofi_engine.dart    # Core logic, crossfading, and player management.
-├── main.dart               # UI layer and controls.
+│   └── lofi_engine.dart   # The mixing logic & state management
+├── main.dart              # UI & Controls
 assets/
 ├── audio/
-    ├── drums/              # Rhythmic loops (80 BPM)
-    ├── chords/             # Melodic loops (Key: C Min, 80 BPM)
-    └── neuro/              # Isochronic tone loops (OGG)
+├── drums/             # Rhythm loops (80 BPM)
+├── chords/            # Melodic loops (80 BPM, Key C)
+└── neuro/             # Isochronic Tones (40Hz, 10Hz, etc)
+```
+
 🚀 Getting Started
 
-Note: This project relies on precise audio timing. Run on a physical device for the best experience. Simulators often have audio latency issues.
-
-Clone the repository
+Clone the repository:
 
 git clone https://github.com/YOUR_USERNAME/flutter-generative-lofi-engine.git
 
-Install dependencies
-
+Install Dependencies:
 flutter pub get
 
-Run the App
+Add Assets:
+Note: This repo does not include the raw audio files due to copyright.
+Add your own .ogg loops to assets/audio/ ensuring they match the paths in lofi_engine.dart.
 
+Run:
 flutter run
+(Note: Run on a physical device. Simulators often have audio latency issues.)
 
-
-🛠 Tech Stack
-
-Flutter & Dart
-
-just_audio: For low-level audio handling and gapless playback.
-
-Timer & Futures: For asynchronous synchronization of audio stems.
-
-🔮 Future Roadmap
-
-Integration with audio_service for background playback controls.
-
-Visualizer based on real-time FFT (Audio Waveform).
-
-"Station" system to switch vibes (e.g., Jazz, Synthwave).
-
-Developed with ❤️ by SK
+👨‍💻 Author
+SK
