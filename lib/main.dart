@@ -19,7 +19,7 @@ class _LofiTestScreenState extends State<LofiTestScreen> {
   @override
   void initState() {
     super.initState();
-    _engine.init(); // Prepare the audio
+    _engine.init();
   }
 
   @override
