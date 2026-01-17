@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.flutter_generative_lofi_engine"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "28.0.13004108"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
