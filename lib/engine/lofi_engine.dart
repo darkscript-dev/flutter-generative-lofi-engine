@@ -3,22 +3,19 @@ import 'dart:math';
 import 'package:just_audio/just_audio.dart';
 
 class LofiEngine {
-  // --- The Players (5 Layer System) ---
-  final AudioPlayer _drumPlayer = AudioPlayer();       // Layer 1: The Beat
-  final AudioPlayer _atmospherePlayer = AudioPlayer(); // Layer 2: Vinyl/Rain
-  final AudioPlayer _neuroPlayer = AudioPlayer();      // Layer 3: Science
+  final AudioPlayer _drumPlayer = AudioPlayer();
+  final AudioPlayer _atmospherePlayer = AudioPlayer();
+  final AudioPlayer _neuroPlayer = AudioPlayer();
 
-  // Layers 4 & 5: The "Infinite" Melody (Crossfading)
   final AudioPlayer _melodyPlayerA = AudioPlayer();
   final AudioPlayer _melodyPlayerB = AudioPlayer();
 
-  // --- Internal Logic ---
   Timer? _crossfadeTimer;
   final Random _random = Random();
-  bool _usingPlayerA = true; // Keeps track of which player is active
+  bool _usingPlayerA = true;
   bool _isPlaying = false;
 
-  // --- Configuration (The "Chill" Station Assets) ---
+  // Configuration
   final String _drumAsset = 'assets/audio/stations/chill_80bpm/drums/drums.ogg';
   final String _atmosAsset = 'assets/audio/stations/chill_80bpm/atmosphere/noise.ogg';
   final String _neuroAsset = 'assets/audio/neuro/iso_pulse_10hz.ogg';
@@ -29,41 +26,37 @@ class LofiEngine {
     'assets/audio/stations/chill_80bpm/melodies/melody_3.ogg',
   ];
 
-  /// Initialize all players and load assets into memory.
   Future<void> init() async {
-    print("Engine: Initializing...");
-
-    // 1. Setup Steady Loops
+    // 1. Setup Base Layers
     await _drumPlayer.setAsset(_drumAsset);
     await _drumPlayer.setLoopMode(LoopMode.one);
 
     await _atmospherePlayer.setAsset(_atmosAsset);
     await _atmospherePlayer.setLoopMode(LoopMode.one);
-    await _atmospherePlayer.setVolume(0.5); // Noise shouldn't be too loud
+    await _atmospherePlayer.setVolume(0.5);
 
     await _neuroPlayer.setAsset(_neuroAsset);
     await _neuroPlayer.setLoopMode(LoopMode.one);
-    await _neuroPlayer.setVolume(0.0); // Start silent, let user fade it in
+    await _neuroPlayer.setVolume(0.0);
 
-    // 2. Setup Melody Players
-    // We start Player A with the first melody
+    // 2. Setup Melody A (Normal Pitch)
     await _melodyPlayerA.setAsset(_melodyAssets[0]);
     await _melodyPlayerA.setLoopMode(LoopMode.one);
     await _melodyPlayerA.setVolume(1.0);
 
-    // Player B is ready but silent
+    // Set Pitch to 1.0 (Normal) to ensure consistent timing
+    await _melodyPlayerA.setPitch(1.0);
+    await _melodyPlayerB.setPitch(1.0);
+
+    // 3. Setup Melody B
     await _melodyPlayerB.setLoopMode(LoopMode.one);
     await _melodyPlayerB.setVolume(0.0);
-
-    print("Engine: Ready.");
   }
 
-  /// Start the Engine
   Future<void> play() async {
     if (_isPlaying) return;
     _isPlaying = true;
 
-    // Start all 5 players at the exact same time
     await Future.wait([
       _drumPlayer.play(),
       _atmospherePlayer.play(),
@@ -72,11 +65,9 @@ class LofiEngine {
       _melodyPlayerB.play(),
     ]);
 
-    // Start the algorithmic crossfading
     _startCrossfadeTimer();
   }
 
-  /// Stop the Engine
   Future<void> stop() async {
     _isPlaying = false;
     _crossfadeTimer?.cancel();
@@ -89,63 +80,57 @@ class LofiEngine {
     ]);
   }
 
-  // --- Volume Controls for the UI ---
-
-  void setNeuroVolume(double val) {
-    // Clamp ensures we never crash with invalid volume numbers
-    _neuroPlayer.setVolume(val.clamp(0.0, 1.0));
-  }
-
-  void setAtmosphereVolume(double val) {
-    _atmospherePlayer.setVolume(val.clamp(0.0, 1.0));
-  }
-
-  // --- The Generative Logic ---
+  void setNeuroVolume(double val) => _neuroPlayer.setVolume(val.clamp(0.0, 1.0));
+  void setAtmosphereVolume(double val) => _atmospherePlayer.setVolume(val.clamp(0.0, 1.0));
 
   void _startCrossfadeTimer() {
-    // Real Lofi songs change every 8 or 16 bars.
-    // At 80 BPM, 1 bar = 3 seconds. 8 bars = 24 seconds.
-    // For testing, let's do 12 seconds so you can hear it work faster.
-    _crossfadeTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+    // Longer duration (24s) hides the loop better
+    _crossfadeTimer = Timer.periodic(const Duration(seconds: 24), (timer) {
       _performCrossfade();
     });
   }
 
   Future<void> _performCrossfade() async {
-    print("Engine: Swapping Melody...");
+    print("Engine: Mixing new layer...");
 
     final playerIn = _usingPlayerA ? _melodyPlayerB : _melodyPlayerA;
     final playerOut = _usingPlayerA ? _melodyPlayerA : _melodyPlayerB;
 
-    // Pick a random melody, but try to avoid the one currently playing
-    String nextAsset;
-    do {
-      nextAsset = _melodyAssets[_random.nextInt(_melodyAssets.length)];
-    } while (_melodyAssets.length > 1 && nextAsset == _getCurrentAsset(playerOut));
+    // 1. VARIATION TRICK: Pick a random pitch for the NEW melody
+    // This creates "New Tracks" from the same file.
+    // 1.0 = Normal, 0.94 = -1 Semitone, 1.05 = +1 Semitone
+    // We only use subtle shifts so it doesn't sound like a chipmunk.
+    final List<double> pitchOptions = [0.943, 1.0, 1.059];
+    double newPitch = pitchOptions[_random.nextInt(pitchOptions.length)];
 
-    // Load the new track into the silent player
+    // 2. Pick a new Melody Asset
+    String nextAsset = _melodyAssets[_random.nextInt(_melodyAssets.length)];
+
+    // Load asset and apply the new "Vibe" (Pitch)
     await playerIn.setAsset(nextAsset);
-    // Ensure it's playing (it might have paused if asset changed)
+    await playerIn.setPitch(newPitch);
+
     if (!playerIn.playing) playerIn.play();
 
-    // SMOOTH CROSSFADE ANIMATION
-    // We change volume 20 times over 2 seconds
-    const steps = 20;
-    for (int i = 1; i <= steps; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      double vol = i / steps;
+    // 3. EQUAL POWER CROSSFADE (The "Professional" Fade)
+    // Instead of linear math, we use Cosine/Sine to keep volume powerful
+    const steps = 40; // Smoother, more steps
+    const stepDuration = Duration(milliseconds: 100); // 4 seconds total fade! Longer is better.
 
-      playerIn.setVolume(vol);        // 0.0 -> 1.0
-      playerOut.setVolume(1.0 - vol); // 1.0 -> 0.0
+    for (int i = 1; i <= steps; i++) {
+      await Future.delayed(stepDuration);
+
+      double fraction = i / steps;
+      // The "Equal Power" Math formula:
+      double volIn = sin(fraction * (pi / 2));
+      double volOut = cos(fraction * (pi / 2));
+
+      playerIn.setVolume(volIn);
+      playerOut.setVolume(volOut);
     }
 
-    // Flip the flag
     _usingPlayerA = !_usingPlayerA;
   }
-
-  // Helper to get current asset path if possible (just_audio doesn't expose this easily publically,
-  // so we just rely on logic, but this is a placeholder if you needed it)
-  String? _getCurrentAsset(AudioPlayer p) => null;
 
   void dispose() {
     _drumPlayer.dispose();
