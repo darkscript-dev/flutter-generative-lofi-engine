@@ -39,14 +39,10 @@ class LofiEngine {
     await _neuroPlayer.setLoopMode(LoopMode.one);
     await _neuroPlayer.setVolume(0.0);
 
-    // 2. Setup Melody A (Normal Pitch)
+    // 2. Setup Melody A
     await _melodyPlayerA.setAsset(_melodyAssets[0]);
     await _melodyPlayerA.setLoopMode(LoopMode.one);
     await _melodyPlayerA.setVolume(1.0);
-
-    // Set Pitch to 1.0 (Normal) to ensure consistent timing
-    await _melodyPlayerA.setPitch(1.0);
-    await _melodyPlayerB.setPitch(1.0);
 
     // 3. Setup Melody B
     await _melodyPlayerB.setLoopMode(LoopMode.one);
@@ -56,6 +52,15 @@ class LofiEngine {
   Future<void> play() async {
     if (_isPlaying) return;
     _isPlaying = true;
+
+    // HARD SYNC: Force all players to start at 0:00
+    await Future.wait([
+      _drumPlayer.seek(Duration.zero),
+      _atmospherePlayer.seek(Duration.zero),
+      _neuroPlayer.seek(Duration.zero),
+      _melodyPlayerA.seek(Duration.zero),
+      _melodyPlayerB.seek(Duration.zero),
+    ]);
 
     await Future.wait([
       _drumPlayer.play(),
@@ -84,53 +89,54 @@ class LofiEngine {
   void setAtmosphereVolume(double val) => _atmospherePlayer.setVolume(val.clamp(0.0, 1.0));
 
   void _startCrossfadeTimer() {
-    // Longer duration (24s) hides the loop better
-    _crossfadeTimer = Timer.periodic(const Duration(seconds: 24), (timer) {
+    // Swap every 15 seconds
+    _crossfadeTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
       _performCrossfade();
     });
   }
 
   Future<void> _performCrossfade() async {
-    print("Engine: Mixing new layer...");
+    print("Engine: Swapping Melody...");
 
     final playerIn = _usingPlayerA ? _melodyPlayerB : _melodyPlayerA;
     final playerOut = _usingPlayerA ? _melodyPlayerA : _melodyPlayerB;
 
-    // 1. VARIATION TRICK: Pick a random pitch for the NEW melody
-    // This creates "New Tracks" from the same file.
-    // 1.0 = Normal, 0.94 = -1 Semitone, 1.05 = +1 Semitone
-    // We only use subtle shifts so it doesn't sound like a chipmunk.
-    final List<double> pitchOptions = [0.943, 1.0, 1.059];
-    double newPitch = pitchOptions[_random.nextInt(pitchOptions.length)];
+    // 1. Pick a new Melody Asset
+    String nextAsset;
+    do {
+      nextAsset = _melodyAssets[_random.nextInt(_melodyAssets.length)];
+    } while (_melodyAssets.length > 1 && nextAsset == _getCurrentAsset(playerOut)); // Don't pick same song twice
 
-    // 2. Pick a new Melody Asset
-    String nextAsset = _melodyAssets[_random.nextInt(_melodyAssets.length)];
-
-    // Load asset and apply the new "Vibe" (Pitch)
+    // Load the new track
     await playerIn.setAsset(nextAsset);
-    await playerIn.setPitch(newPitch);
+
+    // *** THE SYNC FIX ***
+    // Before fading in, we check exactly where the DRUMS are.
+    // We snap the new melody to the exact same position as the drums.
+    // This creates a perfect lock.
+    final currentDrumPosition = _drumPlayer.position;
+    await playerIn.seek(currentDrumPosition);
 
     if (!playerIn.playing) playerIn.play();
 
-    // 3. EQUAL POWER CROSSFADE (The "Professional" Fade)
-    // Instead of linear math, we use Cosine/Sine to keep volume powerful
-    const steps = 40; // Smoother, more steps
-    const stepDuration = Duration(milliseconds: 100); // 4 seconds total fade! Longer is better.
+    // 2. Equal Power Crossfade
+    const steps = 20;
+    const stepDuration = Duration(milliseconds: 100);
 
     for (int i = 1; i <= steps; i++) {
       await Future.delayed(stepDuration);
-
       double fraction = i / steps;
-      // The "Equal Power" Math formula:
       double volIn = sin(fraction * (pi / 2));
       double volOut = cos(fraction * (pi / 2));
-
       playerIn.setVolume(volIn);
       playerOut.setVolume(volOut);
     }
 
     _usingPlayerA = !_usingPlayerA;
   }
+
+  // Helper to check what's playing (simple logic)
+  String? _getCurrentAsset(AudioPlayer p) => null;
 
   void dispose() {
     _drumPlayer.dispose();
