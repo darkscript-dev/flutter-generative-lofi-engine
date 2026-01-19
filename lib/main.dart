@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'engine/lofi_engine.dart';
 
 void main() {
-  runApp(const MaterialApp(home: TestLabScreen()));
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: TestLabScreen(),
+  ));
 }
 
 class TestLabScreen extends StatefulWidget {
@@ -13,12 +16,17 @@ class TestLabScreen extends StatefulWidget {
 }
 
 class _TestLabScreenState extends State<TestLabScreen> {
+  // Instance of our Audio Engine
   final LofiEngine _engine = LofiEngine();
+
+  // State variables
   bool _isReady = false;
+  bool _isPlaying = false;
 
   // Slider Values
-  double _neuroVol = 0.0;
-  double _atmosVol = 0.5;
+  double _neuroVol = 0.0;    // Starts silent
+  double _atmosVol = 0.5;    // Starts at 50%
+  double _masterPitch = 1.0; // Starts Normal (1.0)
 
   @override
   void initState() {
@@ -26,104 +34,200 @@ class _TestLabScreenState extends State<TestLabScreen> {
     _initEngine();
   }
 
+  // Initialize the engine and assets
   Future<void> _initEngine() async {
     await _engine.init();
-    setState(() => _isReady = true);
+    if (mounted) {
+      setState(() => _isReady = true);
+    }
   }
 
   @override
   void dispose() {
-    _engine.dispose();
+    _engine.dispose(); // Cleanup players to prevent memory leaks
     super.dispose();
+  }
+
+  // Helper to name the Vibe based on Pitch
+  String _getVibeName(double pitch) {
+    if (pitch <= 0.9) return "☁️ VAPORWAVE (Slowed)";
+    if (pitch >= 1.1) return "🔥 NIGHTCORE (Fast)";
+    return "✨ NORMAL LOFI";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF121212), // Dark Background
       appBar: AppBar(
-        title: const Text("Lofi Engine V1"),
+        title: const Text("Infinite Lofi Engine"),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Center(
         child: _isReady
             ? _buildControls()
-            : const CircularProgressIndicator(color: Colors.cyan),
+            : const CircularProgressIndicator(color: Colors.cyanAccent),
       ),
     );
   }
 
   Widget _buildControls() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Status Light
-        const Icon(Icons.graphic_eq, color: Colors.cyan, size: 60),
-        const SizedBox(height: 40),
-
-        // Play / Stop Controls
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.play_arrow),
-              label: const Text("START ENGINE"),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white
-              ),
-              onPressed: () => _engine.play(),
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 1. Visual Status
+          Icon(
+              _isPlaying ? Icons.graphic_eq : Icons.music_off_outlined,
+              color: _isPlaying ? Colors.cyanAccent : Colors.grey,
+              size: 80
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _isPlaying ? "GENERATING STREAM..." : "ENGINE IDLE",
+            style: TextStyle(
+                color: _isPlaying ? Colors.cyanAccent : Colors.grey,
+                letterSpacing: 2.0,
+                fontWeight: FontWeight.bold
             ),
-            const SizedBox(width: 20),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.stop),
-              label: const Text("STOP"),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white
+          ),
+
+          const SizedBox(height: 40),
+
+          // 2. Play / Stop Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildBigButton(
+                  label: "PLAY",
+                  icon: Icons.play_arrow,
+                  color: Colors.greenAccent,
+                  onTap: () {
+                    _engine.play();
+                    setState(() => _isPlaying = true);
+                  }
               ),
-              onPressed: () => _engine.stop(),
+              const SizedBox(width: 20),
+              _buildBigButton(
+                  label: "STOP",
+                  icon: Icons.stop,
+                  color: Colors.redAccent,
+                  onTap: () {
+                    _engine.stop();
+                    setState(() => _isPlaying = false);
+                  }
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 40),
+          const Divider(color: Colors.white12, indent: 20, endIndent: 20),
+          const SizedBox(height: 10),
+
+          // 3. MASTER VIBE CONTROL (Pitch/Speed)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.3))
+              ),
+              child: Column(
+                children: [
+                  Text(
+                      _getVibeName(_masterPitch),
+                      style: const TextStyle(
+                          color: Colors.purpleAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16
+                      )
+                  ),
+                  Slider(
+                    value: _masterPitch,
+                    min: 0.75, // Deep
+                    max: 1.25, // Fast
+                    divisions: 10, // Snap points
+                    activeColor: Colors.purpleAccent,
+                    inactiveColor: Colors.purple.withOpacity(0.2),
+                    onChanged: (val) {
+                      setState(() => _masterPitch = val);
+                      _engine.setMasterPitch(val);
+                    },
+                  ),
+                  Text(
+                      "Speed: ${(_masterPitch * 100).toInt()}%",
+                      style: const TextStyle(color: Colors.white38, fontSize: 12)
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
 
-        const SizedBox(height: 50),
+          const SizedBox(height: 20),
 
-        // Sliders
-        _buildSlider(
-            "Neuro Layer (10Hz Alpha)",
-            _neuroVol,
-                (val) {
-              setState(() => _neuroVol = val);
-              _engine.setNeuroVolume(val);
-            }
-        ),
+          // 4. Mixing Sliders (Neuro & Atmosphere)
+          _buildVolumeSlider(
+              "🧠 Neuro Layer (10Hz Alpha)",
+              _neuroVol,
+                  (val) {
+                setState(() => _neuroVol = val);
+                _engine.setNeuroVolume(val);
+              }
+          ),
 
-        _buildSlider(
-            "Atmosphere (Vinyl)",
-            _atmosVol,
-                (val) {
-              setState(() => _atmosVol = val);
-              _engine.setAtmosphereVolume(val);
-            }
-        ),
-      ],
+          _buildVolumeSlider(
+              "🌧️ Atmosphere (Vinyl/Noise)",
+              _atmosVol,
+                  (val) {
+                setState(() => _atmosVol = val);
+                _engine.setAtmosphereVolume(val);
+              }
+          ),
+
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
-  Widget _buildSlider(String label, double val, Function(double) onChanged) {
+  // Helper Widget for Big Buttons
+  Widget _buildBigButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 28),
+      label: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.2),
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          side: BorderSide(color: color, width: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+      ),
+    );
+  }
+
+  // Helper Widget for Volume Sliders
+  Widget _buildVolumeSlider(String label, double val, Function(double) onChanged) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70)),
+          Text(label, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500)),
           Slider(
             value: val,
             min: 0.0,
             max: 1.0,
-            activeColor: Colors.cyan,
+            activeColor: Colors.cyanAccent,
             inactiveColor: Colors.grey[800],
             onChanged: onChanged,
           ),
