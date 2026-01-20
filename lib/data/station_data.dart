@@ -1,18 +1,30 @@
 import '../model/station.dart';
 
 class StationData {
-  // Define your paths constants so we don't make typos
+  // --- ASSET PATHS (Matched exactly to your screenshot) ---
+
+  // Drums
   static const _drum80 = 'assets/audio/pool/drums/drum_80bpm_1.ogg';
+
+  // Atmosphere
   static const _vinyl = 'assets/audio/pool/atmosphere/vinyl.ogg';
-  static const _rain = 'assets/audio/pool/atmosphere/rain.ogg'; // Assume you have this, or use vinyl
+  // Note: You don't have 'rain.ogg' in your screenshot, so we will use vinyl for both
+  // to prevent a crash. (You can add rain.ogg later!)
+  static const _rainFallback = 'assets/audio/pool/atmosphere/vinyl.ogg';
+
+  // Neuro (Brainwaves)
+  // FIXED: Your file is named 'alpha_10hz.ogg', not 'iso_pulse_10hz.ogg'
   static const _alpha = 'assets/audio/neuro/alpha_10hz.ogg';
 
-  static const _mel1 = 'assets/audio/pool/melodies/piano_cmin.ogg';
-  static const _mel2 = 'assets/audio/pool/melodies/guitar_dmaj.ogg';
-  static const _mel3 = 'assets/audio/pool/melodies/acoustic_cmaj.ogg';
+  // Melodies
+  static const _melPiano = 'assets/audio/pool/melodies/piano_cmin.ogg';
+  static const _melGuitar = 'assets/audio/pool/melodies/guitar_dmaj.ogg';
+  static const _melAcoustic = 'assets/audio/pool/melodies/acoustic_cmaj.ogg';
+
+  // --- STATION RECIPES ---
 
   static final List<Station> allStations = [
-    // CHANNEL 1: The Standard Chill
+    // 1. CHILL HOP (The Standard)
     Station(
       id: 'chill_hop',
       name: 'Chill Hop FM',
@@ -20,24 +32,24 @@ class StationData {
       drumAsset: _drum80,
       atmosphereAsset: _vinyl,
       neuroAsset: _alpha,
-      melodyPool: [_mel1, _mel2, _mel3], // Uses ALL your melodies
+      melodyPool: [_melPiano, _melGuitar, _melAcoustic], // Uses all 3
       pitch: 1.0,
     ),
 
-    // CHANNEL 2: Dark Study (Reusing same files, but slowed down!)
+    // 2. MIDNIGHT STUDY (Darker Vibe)
     Station(
       id: 'dark_mode',
       name: 'Midnight Study',
-      description: 'Slowed & Reverb for deep work',
+      description: 'Slowed for deep work',
       drumAsset: _drum80,
-      atmosphereAsset: _rain, // If you have rain, or use vinyl
+      atmosphereAsset: _rainFallback, // Uses vinyl since rain is missing
       neuroAsset: _alpha,
-      melodyPool: [_mel1, _mel2], // Only uses the Piano & Guitar, excludes the bright Acoustic
-      pitch: 0.85, // <--- THIS MAKES IT A NEW STATION
-      volumeDrums: 0.8, // Softer drums
+      melodyPool: [_melPiano, _melGuitar], // Excludes the bright acoustic
+      pitch: 0.85, // SLOWED DOWN (Vaporwave style)
+      volumeDrums: 0.8,
     ),
 
-    // CHANNEL 3: Morning Coffee (Brighter)
+    // 3. MORNING COFFEE (Brighter Vibe)
     Station(
       id: 'morning_vibes',
       name: 'Morning Coffee',
@@ -45,8 +57,8 @@ class StationData {
       drumAsset: _drum80,
       atmosphereAsset: _vinyl,
       neuroAsset: _alpha,
-      melodyPool: [_mel2, _mel3], // Only the Major key (Happy) melodies
-      pitch: 1.05, // Slightly faster/brighter
+      melodyPool: [_melAcoustic, _melGuitar], // Only Happy keys
+      pitch: 1.05, // SPEEDED UP (Slightly)
     ),
   ];
 }
