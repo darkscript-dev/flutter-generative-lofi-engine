@@ -51,21 +51,17 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
+# ... previous lines ...
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+flutter:
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
+  # INDENT "assets" so it belongs to "flutter"
   assets:
+    - assets/audio/neuro/
+    - assets/audio/pool/atmosphere/
     - assets/audio/pool/drums/
     - assets/audio/pool/melodies/
-    - assets/audio/pool/atmosphere/
-
-    # The Science Layer
-    - assets/audio/neuro/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

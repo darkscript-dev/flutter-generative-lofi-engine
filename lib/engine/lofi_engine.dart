@@ -41,8 +41,10 @@ class LofiEngine {
     if (wasPlaying) await stop(); // Stop current if playing to reload safely
 
     print("Engine: Loading Channel ${station.name}...");
+    print("Loading Drums: ${station.drumAsset}"); // Add debug print
 
     // 1. Setup Drums (Gapless Playlist)
+
     await _drumPlayer.setAudioSource(_createGaplessLoop(station.drumAsset));
     await _drumPlayer.setLoopMode(LoopMode.all);
     await _drumPlayer.setVolume(station.volumeDrums);
@@ -167,7 +169,10 @@ class LofiEngine {
     // We look at exactly where the drums are, and snap the new melody
     // to that exact timestamp. This prevents "Drift" over time.
     final currentDrumPosition = _drumPlayer.position;
-    await playerIn.seek(currentDrumPosition);
+    //await playerIn.seek(currentDrumPosition);
+    final loopDuration = const Duration(seconds: 24).inMilliseconds;
+    final relativePosition = currentDrumPosition.inMilliseconds % loopDuration;
+    await playerIn.seek(Duration(milliseconds: relativePosition));
 
     if (!playerIn.playing) playerIn.play();
 
@@ -196,12 +201,13 @@ class LofiEngine {
 
   /// Helper: Creates a list of 50 copies of the same file.
   /// This forces Android/ExoPlayer to pre-buffer the loop, removing the gap.
+  /// Helper: Creates a list of 50 copies of the same file.
   ConcatenatingAudioSource _createGaplessLoop(String assetPath) {
     List<AudioSource> children = [];
-    // 50 copies * 24 seconds = ~20 minutes of gapless audio before a tiny seek.
-    // Since we crossfade every 24s, the user never hears the end of this list.
     for (int i = 0; i < 50; i++) {
-      children.add(AudioSource.uri(Uri.parse('asset:///$assetPath')));
+      // CHANGED: Use .asset() instead of .uri()
+      // This automatically handles the path correctly for Android/iOS
+      children.add(AudioSource.asset(assetPath));
     }
     return ConcatenatingAudioSource(children: children);
   }

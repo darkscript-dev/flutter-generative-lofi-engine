@@ -10,7 +10,7 @@ class StationData {
   static const _vinyl = 'assets/audio/pool/atmosphere/vinyl.ogg';
   // Note: You don't have 'rain.ogg' in your screenshot, so we will use vinyl for both
   // to prevent a crash. (You can add rain.ogg later!)
-  static const _rainFallback = 'assets/audio/pool/atmosphere/vinyl.ogg';
+  static const _rain = 'assets/audio/pool/atmosphere/rain.ogg';
 
   // Neuro (Brainwaves)
   // FIXED: Your file is named 'alpha_10hz.ogg', not 'iso_pulse_10hz.ogg'
@@ -42,7 +42,7 @@ class StationData {
       name: 'Midnight Study',
       description: 'Slowed for deep work',
       drumAsset: _drum80,
-      atmosphereAsset: _rainFallback, // Uses vinyl since rain is missing
+      atmosphereAsset: _rain, // Uses vinyl since rain is missing
       neuroAsset: _alpha,
       melodyPool: [_melPiano, _melGuitar], // Excludes the bright acoustic
       pitch: 0.85, // SLOWED DOWN (Vaporwave style)
