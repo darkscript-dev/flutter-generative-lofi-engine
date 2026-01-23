@@ -159,7 +159,6 @@ class LofiEngine {
     _usingPlayerA = !_usingPlayerA;
   }
 
-  // Use AudioSource.asset to fix the path issues
   ConcatenatingAudioSource _createGaplessLoop(String assetPath) {
     List<AudioSource> children = [];
     for (int i = 0; i < 50; i++) {
