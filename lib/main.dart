@@ -29,29 +29,29 @@ class _EngineTestScreenState extends State<EngineTestScreen> {
   // --- ASSETS (Matched to your specific files) ---
   // STATION 1: 80 BPM
   final List<String> drums80 = [
-    'assets/audio/Cymatics - Eternity Percussion Loop 1 - 80 BPM.m4a',
-    'assets/audio/Cymatics - Lofi Full Drum Loop 2 - 80 BPM.m4a',
+    'assets/audio/Cymatics - Eternity Percussion Loop 1 - 80 BPM.wav',
+    'assets/audio/Cymatics - Lofi Full Drum Loop 2 - 80 BPM.wav',
   ];
   final List<String> melodies80 = [
-    'assets/audio/Cymatics - Bordeaux - 80 BPM C Min.m4a',
-    'assets/audio/Cymatics - Dreamscape - 80 BPM D# Min.m4a',
-    'assets/audio/Cymatics - Dusk Acoustic Guitar Loop - 80 BPM C Maj.m4a',
+    'assets/audio/Cymatics - Bordeaux - 80 BPM C Min.wav',
+    'assets/audio/Cymatics - Dreamscape - 80 BPM D Min.wav',
+    'assets/audio/Cymatics - Dusk Acoustic Guitar Loop - 80 BPM C Maj.wav',
   ];
 
   // STATION 2: 76 BPM
   final List<String> drums76 = [
-    'assets/audio/Cymatics - Dreams Shaker Loop 2 - 76 BPM.m4a',
-    'assets/audio/Cymatics - Dreams Shaker Loop 3 - 76 BPM.m4a',
+    'assets/audio/Cymatics - Dreams Shaker Loop 2 - 76 BPM.wav',
+    'assets/audio/Cymatics - Dreams Shaker Loop 3 - 76 BPM.wav',
   ];
   final List<String> melodies76 = [
-    'assets/audio/Cymatics - Imagination - 76 BPM A# Min.m4a',
-    'assets/audio/Cymatics - Misty Eyed - 76 BPM A# Min.m4a',
+    'assets/audio/Cymatics - Imagination - 76 BPM A Min.wav',
+    'assets/audio/Cymatics - Misty Eyed - 76 BPM A Min.wav',
   ];
 
   final List<String> oneShots = [
-    'assets/audio/Cymatics - Cartoon Bell One Shot - C.m4a',
-    'assets/audio/Cymatics - Frozen Keys One Shot - C.m4a',
-    'assets/audio/Cymatics - Kalimba Tape One Shot - C.m4a',
+    'assets/audio/Cymatics - Cartoon Bell One Shot - C.wav',
+    'assets/audio/Cymatics - Frozen Keys One Shot - C.wav',
+    'assets/audio/Cymatics - Kalimba Tape One Shot - C.wav',
   ];
 
   @override
